@@ -40,7 +40,100 @@ def index():
         except Exception as exc:
             error = f'Please check the customer details and try again. ({exc})'
     return render_template('index.html', result=result, values=values, error=error)
+@app.route('/bulk', methods=['POST'])
+def bulk_predict():
+    try:
+        file = request.files.get('file')
 
+        if not file or file.filename == '':
+            return render_template(
+                'index.html',
+                bulk_error='Please select a CSV file.'
+            )
+
+        if not file.filename.lower().endswith('.csv'):
+            return render_template(
+                'index.html',
+                bulk_error='Please upload a CSV file.'
+            )
+
+        df = pd.read_csv(file)
+
+        # Make sure all model fields are available
+        missing = [field for field in FIELDS if field not in df.columns]
+
+        # TotalCharges can be calculated automatically
+        if 'TotalCharges' in missing:
+            if 'tenure' in df.columns and 'MonthlyCharges' in df.columns:
+                df['TotalCharges'] = (
+                    pd.to_numeric(df['tenure'], errors='coerce') *
+                    pd.to_numeric(df['MonthlyCharges'], errors='coerce')
+                )
+                missing.remove('TotalCharges')
+
+        if missing:
+            raise ValueError(
+                'Missing required columns: ' + ', '.join(missing)
+            )
+
+        # Convert numeric fields
+        df['SeniorCitizen'] = pd.to_numeric(
+            df['SeniorCitizen'], errors='raise'
+        ).astype(int)
+
+        df['tenure'] = pd.to_numeric(
+            df['tenure'], errors='raise'
+        )
+
+        df['MonthlyCharges'] = pd.to_numeric(
+            df['MonthlyCharges'], errors='raise'
+        )
+
+        df['TotalCharges'] = pd.to_numeric(
+            df['TotalCharges'], errors='coerce'
+        )
+
+        # Automatically fill missing TotalCharges
+        calculated_total = df['tenure'] * df['MonthlyCharges']
+        df['TotalCharges'] = df['TotalCharges'].fillna(calculated_total)
+
+        # Run all customers through the existing model
+        X = df[FIELDS].copy()
+        Xt = preprocessor.transform(X)
+
+        probabilities = model.predict_proba(Xt)[:, 1]
+
+        df['ChurnProbability'] = (probabilities * 100).round(1)
+        df['Prediction'] = [
+            'Likely to Churn' if p >= 0.5
+            else 'Unlikely to Churn'
+            for p in probabilities
+        ]
+
+        df['RiskLevel'] = [
+            risk_level(float(p))[0]
+            for p in probabilities
+        ]
+
+        # Highest-risk customers appear first
+        df = df.sort_values(
+            'ChurnProbability',
+            ascending=False
+        )
+
+        bulk_results = df.to_dict(orient='records')
+
+        return render_template(
+            'index.html',
+            bulk_results=bulk_results,
+            bulk_count=len(df)
+        )
+
+    except Exception as exc:
+        return render_template(
+            'index.html',
+            bulk_error=f'Could not process the file: {exc}'
+        )
 @app.get('/health')
 def health():
     return {'status':'ok'}, 200

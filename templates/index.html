@@ -16,5 +16,66 @@ function calculateTotal() {
     document.getElementById("totalCharges").value = totalCharges.toFixed(2);
 }
 </script></div><button type="submit">Predict churn risk</button></div></form>
-{% if result %}<section class="result"><div class="result-top"><div><small>PREDICTION</small><h2>{{result.prediction}}</h2></div><span class="risk {{result.risk_class}}">{{result.risk}} Risk</span></div><div class="metrics"><div><span>Churn Probability</span><strong>{{result.probability}}%</strong></div><div><span>Risk Level</span><strong>{{result.risk}}</strong></div><div><span>Model</span><strong>{{result.model}}</strong></div></div><div class="bar"><i style="width:{{result.probability}}%"></i></div><p class="note">Probability is a model estimate for decision support, not a guarantee that a customer will leave.</p></section>{% endif %}
-<section class="about"><h3>About this prototype</h3><p>This web-based system applies a trained machine-learning model to telecom customer information to support early identification of customers at risk of churn. It is designed for the South Sudan telecommunications project context.</p></section></main><footer>Customer Churn Prediction System • University Project Prototype</footer></body></html>
+<section class="bulk-section">
+    <div class="card">
+        <h2>Bulk Customer Churn Prediction</h2>
+
+        <p>
+            Upload a CSV file containing multiple customers.
+            The system will calculate the churn probability for every customer
+            and list the highest-risk customers first.
+        </p>
+
+        {% if bulk_error %}
+        <div class="error">
+            {{ bulk_error }}
+        </div>
+        {% endif %}
+
+        <form action="/bulk" method="post" enctype="multipart/form-data">
+            <label>
+                <span>Select Customer CSV File</span>
+                <input type="file" name="file" accept=".csv" required>
+            </label>
+
+            <button type="submit">
+                Analyze Customers
+            </button>
+        </form>
+    </div>
+</section>
+
+{% if bulk_results %}
+<section class="result">
+    <div class="result-top">
+        <div>
+            <small>BULK PREDICTION RESULTS</small>
+            <h2>{{ bulk_count }} Customers Analyzed</h2>
+        </div>
+    </div>
+
+    <div style="overflow-x:auto;">
+        <table style="width:100%; border-collapse:collapse;">
+            <thead>
+                <tr>
+                    <th>Customer ID</th>
+                    <th>Churn Probability</th>
+                    <th>Prediction</th>
+                    <th>Risk Level</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                {% for customer in bulk_results %}
+                <tr>
+                    <td>{{ customer.get('customerID', 'N/A') }}</td>
+                    <td>{{ customer['ChurnProbability'] }}%</td>
+                    <td>{{ customer['Prediction'] }}</td>
+                    <td>{{ customer['RiskLevel'] }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+{% endif %}<section class="about"><h3>About this prototype</h3><p>This web-based system applies a trained machine-learning model to telecom customer information to support early identification of customers at risk of churn. It is designed for the South Sudan telecommunications project context.</p></section></main><footer>Customer Churn Prediction System • University Project Prototype</footer></body></html>

@@ -40,8 +40,10 @@ def index():
         except Exception as exc:
             error = f'Please check the customer details and try again. ({exc})'
     return render_template('index.html', result=result, values=values, error=error)
-@app.route('/bulk', methods=['POST'])
+@app.route('/bulk', methods=['GET', 'POST'])
 def bulk_predict():
+    if request.method == 'GET':
+        return render_template('index.html')
     try:
         file = request.files.get('file')
 

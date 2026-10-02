@@ -9,6 +9,87 @@
 <label><span>Tenure (months)</span><input id="tenure" name="tenure" type="number" min="0" max="120" step="1" value="{{values.get('tenure','')}}" required></label>
 <label><span>Monthly Charges</span><input id="monthly-charges" name="MonthlyCharges" type="number" min="0" step="0.01" value="{{values.get('MonthlyCharges','')}}" required></label>
 <label><span>Estimated Total Charges</span><input id="total-charges" type="text" value="{{values.get('TotalCharges','')}}" placeholder="Calculated automatically" readonly><small>Tenure × monthly charges; actual billing history may differ.</small></label>
-</div><button type="submit">Predict churn risk</button></div></form>
+</div><button type="submit">Predict t churn risk</button></div></form>
 {% if result %}<section class="result"><div class="result-top"><div><small>PREDICTION</small><h2>{{result.prediction}}</h2></div><span class="risk {{result.risk_class}}">{{result.risk}} Risk</span></div><div class="metrics"><div><span>Churn Probability</span><strong>{{result.probability}}%</strong></div><div><span>Risk Level</span><strong>{{result.risk}}</strong></div><div><span>Model</span><strong>{{result.model}}</strong></div></div><div class="bar"><i style="width:{{result.probability}}%"></i></div><p class="note">Probability is a model estimate for decision support, not a guarantee that a customer will leave.</p></section>{% endif %}
-<section class="about"><h3>About this prototype</h3><p>This web-based system applies a trained machine-learning model to telecom customer information to support early identification of customers at risk of churn. It is designed for the South Sudan telecommunications project context.</p></section></main><footer>Customer Churn Prediction System • University Project Prototype</footer><script>const tenureInput=document.getElementById('tenure');const monthlyInput=document.getElementById('monthly-charges');const totalOutput=document.getElementById('total-charges');function updateTotal(){const tenure=Number(tenureInput.value);const monthly=Number(monthlyInput.value);totalOutput.value=tenureInput.value!==''&&monthlyInput.value!==''&&tenureInput.validity.valid&&monthlyInput.validity.valid?((Math.round((tenure*monthly+Number.EPSILON)*100))/100).toFixed(2):''}tenureInput.addEventListener('input',updateTotal);monthlyInput.addEventListener('input',updateTotal);updateTotal();</script></body></html>
+<section class="about"<section class="about"><section class="card">
+  <h3>Upload customers using CSV</h3>
+  <p>Upload a CSV containing up to 1,000 customers.</p>
+  <p><a href="{{ url_for('sample') }}">Download the sample CSV</a></p>
+
+  <form action="{{ url_for('batch') }}"
+        method="post"
+        enctype="multipart/form-data">
+    <label>
+      <span>Choose a CSV file</span>
+      <input type="file" name="file" accept=".csv" required>
+    </label>
+    <button type="submit">Upload and predict</button>
+  </form>
+
+  {% if batch_error %}
+    <div class="error">{{ batch_error }}</div>
+  {% endif %}
+
+  {% if summary %}
+    <p>
+      Total customers: {{ summary.total }} |
+      Predicted: {{ summary.predicted }} |
+      Invalid rows: {{ summary.invalid }} |
+      Likely to churn: {{ summary.likely }}
+    </p>
+  {% endif %}
+
+  {% if batch_results %}
+    <button type="button" id="download-results">
+      Download prediction results
+    </button>
+
+    <div style="overflow-x:auto">
+      <table>
+        <thead>
+          <tr>
+            <th>Customer</th>
+            <th>Prediction</th>
+            <th>Churn probability</th>
+            <th>Risk</th>
+            <th>Error</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for entry in batch_results %}
+            <tr>
+              <td>{{ entry.customer }}</td>
+              <td>{{ entry.prediction }}</td>
+              <td>
+                {% if entry.probability != '' %}
+                  {{ entry.probability }}%
+                {% endif %}
+              </td>
+              <td>{{ entry.risk }}</td>
+              <td>{{ entry.error }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <script>
+      document.getElementById('download-results')
+        .addEventListener('click', function () {
+          const csv = {{ results_csv|tojson }};
+          const blob = new Blob(
+            ['\uFEFF', csv],
+            {type: 'text/csv;charset=utf-8;'}
+          );
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.href = url;
+          link.download = 'churn_prediction_results.csv';
+          document.body.appendChild(link);
+          link.click();
+          link.remove();
+          setTimeout(() => URL.revokeObjectURL(url), 1000);
+        });
+    </script>
+  {% endif %}
+</section>><h3>Abouthis prototype</h3><p>This web-based system applies a trained machine-learning model to telecom customer information to support early identification of customers at risk of churn. It is designed for the South Sudan telecommunications project context.</p></section></main><footer>Customer Churn Prediction System • University Project Prototype</footer><script>const tenureInput=document.getElementById('tenure');const monthlyInput=document.getElementById('monthly-charges');const totalOutput=document.getElementById('total-charges');function updateTotal(){const tenure=Number(tenureInput.value);const monthly=Number(monthlyInput.value);totalOutput.value=tenureInput.value!==''&&monthlyInput.value!==''&&tenureInput.validity.valid&&monthlyInput.validity.valid?((Math.round((tenure*monthly+Number.EPSILON)*100))/100).toFixed(2):''}tenureInput.addEventListener('input',updateTotal);monthlyInput.addEventListener('input',updateTotal);updateTotal();</script></body></html>

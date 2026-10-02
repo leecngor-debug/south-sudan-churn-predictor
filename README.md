@@ -8,6 +8,7 @@ Web-based ML customer churn prediction prototype for telecommunication services 
 - Low / Medium / High risk level
 - Random Forest model selected from LR, DT, RF and SVM comparison
 - Input validation and responsive interface
+- Estimated total charges calculated automatically from tenure and monthly charges (actual billing totals may differ)
 
 ## Run locally
 ```bash

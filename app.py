@@ -46,7 +46,15 @@ def index():
             error = 'Please enter a valid tenure and monthly charge, then try again.'
     return render_template('index.html', result=result, values=values, error=error)
 
-@app.get('/health')
+
+
+@app.get('/download')
+def download():
+    return send_file(
+        BASE / 'sample_customers.csv',
+        as_attachment=True,
+        download_name='sample_customers.csv'
+    )@app.get('/health')
 def health():
     return {'status':'ok'}, 200
 

@@ -213,8 +213,9 @@ def batch():
     )
 
 
-@app.get('/download')
-def sample():
+@app.get('/download', endpoint='download')
+@app.get('/sample', endpoint='sample')
+def download_sample_csv():
     return send_file(
         BASE / 'sample_customers.csv',
         as_attachment=True,
